@@ -56,4 +56,8 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   )
 
 lazy val interopMonixJVM = interopMonix.jvm
-lazy val interopMonixJS  = interopMonix.js
+
+lazy val interopMonixJS = interopMonix.js
+  .settings(
+    libraryDependencies += "org.scala-js" %%% "scalajs-java-time" % "0.2.5" % Test
+  )
