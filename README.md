@@ -1,5 +1,7 @@
 # Interop Monix
 
+[![CircleCI][ci-badge]][ci-url]
+
 ## Task conversions
 
 Interop layer provides the following conversions:
@@ -82,3 +84,6 @@ object UnsafeExample extends DefaultRuntime {
   }
 }
 ```
+
+[ci-badge]: https://circleci.com/gh/zio/interop-monix/tree/master.svg?style=svg
+[ci-url]: https://circleci.com/gh/zio/interop-monix/tree/master
