@@ -14,6 +14,12 @@ inThisBuild(
         "john@degoes.net",
         url("http://degoes.net")
       )
+    ),
+    pgpPublicRing := file("/tmp/public.asc"),
+    pgpSecretRing := file("/tmp/secret.asc"),
+    releaseEarlyWith := SonatypePublisher,
+    scmInfo := Some(
+      ScmInfo(url("https://github.com/zio/interop-monix/"), "scm:git:git@github.com:zio/interop-monix.git")
     )
   )
 )
@@ -22,13 +28,6 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 addCommandAlias("testJVM", ";interopMonixJVM/test")
 addCommandAlias("testJS", ";interopMonixJS/test")
-
-pgpPublicRing := file("/tmp/public.asc")
-pgpSecretRing := file("/tmp/secret.asc")
-releaseEarlyWith := SonatypePublisher
-scmInfo := Some(
-  ScmInfo(url("https://github.com/zio/interop-monix/"), "scm:git:git@github.com:zio/interop-monix.git")
-)
 
 lazy val root = project
   .in(file("."))
