@@ -3,7 +3,7 @@ package zio.interop
 import _root_.monix.eval
 import _root_.monix.execution.Scheduler
 import org.specs2.concurrent.ExecutionEnv
-import zio.Exit.Cause.fail
+import zio.Cause.fail
 import zio.interop.monix._
 import zio.{ Exit, IO, TestRuntime }
 
