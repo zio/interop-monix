@@ -45,9 +45,9 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   .settings(buildInfoSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"    %%% "zio"                  % "1.0.0-RC9",
+      "dev.zio"    %%% "zio"                  % "1.0.0-RC9-4",
       "io.monix"   %%% "monix"                % "3.0.0-RC2",
-      "dev.zio"    %%% "zio"                  % "1.0.0-RC9" % Test classifier "tests",
+      "dev.zio"    %%% "zio"                  % "1.0.0-RC9-4" % Test classifier "tests",
       "org.specs2" %%% "specs2-core"          % "4.5.1" % Test,
       "org.specs2" %%% "specs2-scalacheck"    % "4.5.1" % Test,
       "org.specs2" %%% "specs2-matcher-extra" % "4.5.1" % Test
