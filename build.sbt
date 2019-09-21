@@ -24,12 +24,6 @@ inThisBuild(
   )
 )
 
-Global / credentials += Credentials(
-  "Sonatype Nexus Repository Manager",
-  "oss.sonatype.org",
-  sys.env("SONATYPE_USER"),
-  sys.env("SONATYPE_PASSWORD")
-)
 ThisBuild / publishTo := sonatypePublishToBundle.value
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
