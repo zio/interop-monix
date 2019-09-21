@@ -23,9 +23,7 @@ inThisBuild(
   )
 )
 
-publishTo in ThisBuild := {
-  if (!isSnapshot.value) sonatypePublishToBundle.value else Some(Opts.resolver.sonatypeSnapshots)
-}
+publishTo in ThisBuild := sonatypePublishToBundle.value
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")

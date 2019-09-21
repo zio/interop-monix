@@ -87,10 +87,8 @@ jobs:
           key: sbt-cache
       - run: echo -n "${PGP_PUBLIC}" | base64 -d > /tmp/public.asc
       - run: echo -n "${PGP_SECRET}" | base64 -d > /tmp/secret.asc
-      - run: sbt ++2.11.12! interopMonixJVM/releaseEarly
-      - run: sbt ++2.12.8! interopMonixJVM/releaseEarly
-      - run: sbt ++2.11.12! interopMonixJS/releaseEarly
-      - run: sbt ++2.12.8! interopMonixJS/releaseEarly
+      - run: ./sbt ++2.11.12! +clean +sonatypeBundleClean +publishSigned +sonatypeBundleRelease
+      - run: ./sbt ++2.12.8! +clean +sonatypeBundleClean +publishSigned +sonatypeBundleRelease
 
 workflows:
   version: 2
