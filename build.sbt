@@ -15,6 +15,7 @@ inThisBuild(
         url("http://degoes.net")
       )
     ),
+    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
     pgpPublicRing := file("/tmp/public.asc"),
     pgpSecretRing := file("/tmp/secret.asc"),
     scmInfo := Some(
@@ -23,7 +24,13 @@ inThisBuild(
   )
 )
 
-publishTo in ThisBuild := sonatypePublishToBundle.value
+Global / credentials += Credentials(
+  "Sonatype Nexus Repository Manager",
+  "oss.sonatype.org",
+  sys.env("SONATYPE_USER"),
+  sys.env("SONATYPE_PASSWORD")
+)
+ThisBuild / publishTo := sonatypePublishToBundle.value
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
