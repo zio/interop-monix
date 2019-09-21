@@ -9,7 +9,7 @@ import zio.{ IO, Runtime }
 
 import scala.util.{ Success, Try }
 
-object MonixSpec2
+object MonixSpec
     extends DefaultRunnableSpec({
 
       val runtime = Runtime((), DefaultTestRunner.platform)
