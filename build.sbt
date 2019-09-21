@@ -1,6 +1,6 @@
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import explicitdeps.ExplicitDepsPlugin.autoImport.moduleFilterRemoveValue
-import ScalazBuild._
+import BuildHelper._
 
 inThisBuild(
   List(
@@ -17,12 +17,13 @@ inThisBuild(
     ),
     pgpPublicRing := file("/tmp/public.asc"),
     pgpSecretRing := file("/tmp/secret.asc"),
-    releaseEarlyWith := SonatypePublisher,
     scmInfo := Some(
       ScmInfo(url("https://github.com/zio/interop-monix/"), "scm:git:git@github.com:zio/interop-monix.git")
     )
   )
 )
+
+publishTo in ThisBuild := sonatypePublishToBundle.value
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
