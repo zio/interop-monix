@@ -42,6 +42,7 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   .in(file("interop-monix"))
   .enablePlugins(BuildInfoPlugin)
   .settings(stdSettings("zio-interop-monix"))
+  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
   .settings(buildInfoSettings)
   .settings(
     libraryDependencies ++= Seq(
