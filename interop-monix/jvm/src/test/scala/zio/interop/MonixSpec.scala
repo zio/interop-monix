@@ -2,103 +2,88 @@ package zio.interop
 
 import _root_.monix.eval
 import _root_.monix.execution.Scheduler
-import org.specs2.concurrent.ExecutionEnv
-import zio.Cause.fail
 import zio.interop.monix._
-import zio.{ Exit, IO, TestRuntime }
+import zio.test.Assertion._
+import zio.test._
+import zio.{ IO, Runtime }
 
-class MonixSpec(implicit ee: ExecutionEnv) extends TestRuntime {
-  def is = s2"""
-  Monix interoperability spec
+import scala.util.{ Success, Try }
 
-  `IO.fromTask` must
-    return an `IO` that fails if `Task` failed. $propagateTaskFailure
-    return an `IO` that produces the value from `Task`. $propagateTaskResult
+object MonixSpec
+    extends DefaultRunnableSpec({
 
-  `IO.toTask` must
-    produce a successful `IO` of `Task`. $toTaskAlwaysSucceeds
-    returns a `Task` that fails if `IO` fails. $propagateFailureToTask
-    returns a `Task` that produces the value from `IO`. $propagateResultToTask
+      val runtime = Runtime((), DefaultTestRunner.platform)
 
-  `IO.fromCoeval` must
-    return an `IO` that fails if `Coeval` failed. $propagateCoevalFailure
-    return an `IO` that produces the value from `Coeval`. $propagateCoevalResult
-
-  `IO.toCoeval` must
-    produce a successful `IO` of `Coeval`. $toTaskAlwaysSucceeds
-    returns a `Coeval` that fails if `IO` fails. $propagateFailureToCoeval
-    returns a `Coeval` that produces the value from `IO`. $propagateResultToCoeval
-  """
-
-  implicit val scheduler = Scheduler(ee.executionContext)
-
-  def propagateTaskFailure = {
-    val error = new Exception
-    val task  = eval.Task.raiseError[Int](error)
-    val io    = IO.fromTask(task)
-
-    unsafeRunSync(io) must_=== Exit.Failure(fail(error))
-  }
-
-  def propagateTaskResult = {
-    val value = 10
-    val task  = eval.Task(value)
-    val io    = IO.fromTask(task)
-
-    unsafeRun(io) === value
-  }
-
-  def toTaskAlwaysSucceeds = {
-    val task = IO.fail(new Exception).toTask
-    unsafeRun(task) must beAnInstanceOf[eval.Task[Unit]]
-  }
-
-  def propagateFailureToTask = {
-    val ex   = new Exception
-    val task = IO.fail(ex).toTask
-
-    unsafeRun(task).runSyncStep must throwAn(ex)
-  }
-
-  def propagateResultToTask = {
-    val value = 10
-    val task  = IO.succeed(value).toTask
-
-    unsafeRun(task).runSyncStep must beRight(10)
-  }
-
-  def propagateCoevalFailure = {
-    val error  = new Exception
-    val coeval = eval.Coeval.raiseError[Int](error)
-    val io     = IO.fromCoeval(coeval)
-
-    unsafeRunSync(io) must_=== Exit.Failure(fail(error))
-  }
-
-  def propagateCoevalResult = {
-    val value  = 10
-    val coeval = eval.Coeval(value)
-    val io     = IO.fromCoeval(coeval)
-
-    unsafeRun(io) === value
-  }
-
-  def toCoevalAlwaysSucceeds = {
-    val coeval = IO.fail(new Exception).toCoeval
-    unsafeRun(coeval) must beAnInstanceOf[eval.Coeval[Unit]]
-  }
-
-  def propagateFailureToCoeval = {
-    val ex     = new Exception
-    val coeval = IO.fail(ex).toCoeval
-
-    unsafeRun(coeval).runTry must beFailedTry(ex)
-  }
-
-  def propagateResultToCoeval = {
-    val value  = 10
-    val coeval = IO.succeed(value).toCoeval
-
-    unsafeRun(coeval).runTry must beSuccessfulTry(value)
-  }
-}
+      suite("MonixSpec2")(
+        suite("IO.fromTask")(
+          testM("return an `IO` that fails if `Task` failed.") {
+            implicit val scheduler: Scheduler                 = Scheduler(runtime.Platform.executor.asEC)
+            val error                                         = new Exception
+            val task                                          = eval.Task.raiseError[Int](error)
+            val io                                            = IO.fromTask(task).unit
+            val assertion: Assertion[Either[Throwable, Unit]] = equalTo(Left(error))
+            assertM(io.either, assertion)
+          },
+          testM("return an `IO` that produces the value from `Task`.") {
+            implicit val scheduler: Scheduler                = Scheduler(runtime.Platform.executor.asEC)
+            val value                                        = 10
+            val task                                         = eval.Task(value)
+            val io                                           = IO.fromTask(task)(scheduler)
+            val assertion: Assertion[Either[Throwable, Int]] = equalTo(Right(value))
+            assertM(io.either, assertion)
+          }
+        ),
+        suite("IO.toTask")(
+          testM("produce a successful `IO` of `Task`.") {
+            val task = IO.fail(new Exception).toTask
+            assertM(task.map(_.isInstanceOf[eval.Task[Unit]]), isTrue)
+          },
+          testM("returns a `Task` that fails if `IO` fails.") {
+            val error                                    = new Exception
+            val task                                     = IO.fail(error).toTask
+            val assertion: Assertion[eval.Task[Nothing]] = equalTo(eval.Task.raiseError(error))
+            assertM(task, assertion)
+          },
+          testM("returns a `Task` that produces the value from `IO`.") {
+            implicit val scheduler: Scheduler = Scheduler(runtime.Platform.executor.asEC)
+            val value                         = 10
+            val task                          = IO.succeed(value).toTask.map(_.runSyncUnsafe())
+            assertM(task, equalTo(10))
+          }
+        ),
+        suite("IO.fromCoeval")(
+          testM("return an `IO` that fails if `Coeval` failed") {
+            val error                                         = new Exception
+            val coeval                                        = eval.Coeval.raiseError[Int](error)
+            val io                                            = IO.fromCoeval(coeval).unit
+            val assertion: Assertion[Either[Throwable, Unit]] = equalTo(Left(error))
+            assertM(io.either, assertion)
+          },
+          testM("return an `IO` that produces the value from `Coeval`.") {
+            val value                                        = 10
+            val coeval                                       = eval.Coeval(value)
+            val io                                           = IO.fromCoeval(coeval)
+            val assertion: Assertion[Either[Throwable, Int]] = equalTo(Right(value))
+            assertM(io.either, assertion)
+          }
+        ),
+        suite("IO.toCoeval")(
+          testM("produce a successful `IO` of `Coeval`") {
+            val task = IO.fail(new Exception).toCoeval
+            assertM(task.map(_.isInstanceOf[eval.Coeval[Unit]]), isTrue)
+          },
+          testM("returns a `Coeval` that fails if `IO` fails.") {
+            val error                                      = new Exception
+            val coeval                                     = IO.fail(error).toCoeval
+            val assertion: Assertion[eval.Coeval[Nothing]] = equalTo(eval.Coeval.raiseError(error))
+            assertM(coeval, assertion)
+          },
+          testM("returns a `Coeval` that produces the value from `IO`.") {
+            val value                          = 10
+            val coeval                         = IO.succeed(value).toCoeval.map(_.runTry)
+            val assertion: Assertion[Try[Int]] = equalTo(Success(10))
+            assertM(coeval, assertion)
+          }
+        )
+      )
+    })

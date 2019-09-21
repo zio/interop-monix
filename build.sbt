@@ -42,15 +42,14 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   .in(file("interop-monix"))
   .enablePlugins(BuildInfoPlugin)
   .settings(stdSettings("zio-interop-monix"))
+  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
   .settings(buildInfoSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"    %%% "zio"                  % "1.0.0-RC11-1",
-      "io.monix"   %%% "monix"                % "3.0.0",
-      "dev.zio"    %%% "core-tests"           % "1.0.0-RC11-1" % Test classifier "tests",
-      "org.specs2" %%% "specs2-core"          % "4.7.1" % Test,
-      "org.specs2" %%% "specs2-scalacheck"    % "4.7.1" % Test,
-      "org.specs2" %%% "specs2-matcher-extra" % "4.7.1" % Test
+      "io.monix" %%% "monix"       % "3.0.0",
+      "dev.zio"  %%% "zio"         % "1.0.0-RC12-1",
+      "dev.zio"  %%% "zio-test"    % "1.0.0-RC12-1",
+      "dev.zio"  %% "zio-test-sbt" % "1.0.0-RC12-1" % "test"
     )
   )
 
