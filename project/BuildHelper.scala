@@ -49,8 +49,6 @@ object BuildHelper {
           "-Ywarn-extra-implicit",
           "-Ywarn-unused:_,imports",
           "-Ywarn-unused:imports",
-          "-opt:l:inline",
-          "-opt-inline-from:zio.internal.**",
           "-Ypartial-unification",
           "-Yno-adapted-args",
           "-Ywarn-inaccessible",
