@@ -16,7 +16,7 @@ object MonixSpec
       suite("MonixSpec2")(
         suite("IO.fromTask")(
           testM("return an `IO` that fails if `Task` failed.") {
-            implicit val scheduler: Scheduler                 = Scheduler(runtime.Platform.executor.asEC)
+            implicit val scheduler: Scheduler                 = Scheduler(runtime.platform.executor.asEC)
             val error                                         = new Exception
             val task                                          = eval.Task.raiseError[Int](error)
             val io                                            = IO.fromTask(task).unit
@@ -24,7 +24,7 @@ object MonixSpec
             assertM(io.either, assertion)
           },
           testM("return an `IO` that produces the value from `Task`.") {
-            implicit val scheduler: Scheduler                = Scheduler(runtime.Platform.executor.asEC)
+            implicit val scheduler: Scheduler                = Scheduler(runtime.platform.executor.asEC)
             val value                                        = 10
             val task                                         = eval.Task(value)
             val io                                           = IO.fromTask(task)(scheduler)
@@ -44,7 +44,7 @@ object MonixSpec
             assertM(task, assertion)
           },
           testM("returns a `Task` that produces the value from `IO`.") {
-            implicit val scheduler: Scheduler = Scheduler(runtime.Platform.executor.asEC)
+            implicit val scheduler: Scheduler = Scheduler(runtime.platform.executor.asEC)
             val value                         = 10
             val task                          = IO.succeed(value).toTask.map(_.runSyncUnsafe())
             assertM(task, equalTo(10))
