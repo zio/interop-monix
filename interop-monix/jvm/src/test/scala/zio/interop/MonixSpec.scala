@@ -11,7 +11,6 @@ import scala.util.{ Success, Try }
 
 object MonixSpec
     extends DefaultRunnableSpec({
-
       val runtime = Runtime((), DefaultTestRunner.platform)
 
       suite("MonixSpec2")(
