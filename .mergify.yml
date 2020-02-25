@@ -22,3 +22,23 @@ pull_request_rules:
       merge:
         method: squash
         strict: true
+  - name: review PR's by other authors
+    conditions:
+      - author!=scala-steward
+      - 'status-success=ci/circleci: test_211_jdk8_js'
+      - 'status-success=ci/circleci: test_211_jdk8_jvm'
+      - 'status-success=ci/circleci: test_212_jdk8_js'
+      - 'status-success=ci/circleci: test_212_jdk8_jvm'
+      - 'status-success=ci/circleci: test_212_jdk11_jvm'
+      - 'status-success=ci/circleci: test_213_jdk8_js'
+      - 'status-success=ci/circleci: test_213_jdk8_jvm'
+      - '#approved-reviews-by>=1'
+    actions:
+      merge:
+        method: squash
+        strict: true
+  - name: remove outdated reviews
+    conditions:
+      - base=master
+    actions:
+      dismiss_reviews: {}
