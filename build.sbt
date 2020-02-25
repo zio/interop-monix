@@ -57,5 +57,5 @@ lazy val interopMonixJVM = interopMonix.jvm
 
 lazy val interopMonixJS = interopMonix.js
   .settings(
-    libraryDependencies += "org.scala-js" %%% "scalajs-java-time" % "0.2.6" % Test
+    libraryDependencies += "org.scala-js" %%% "scalajs-java-time" % "1.0.0" % Test
   )
