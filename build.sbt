@@ -13,6 +13,12 @@ inThisBuild(
         "John De Goes",
         "john@degoes.net",
         url("http://degoes.net")
+      ),
+      Developer(
+        "mijicd",
+        "Dejan Mijic",
+        "dmijic@acm.org",
+        url("http://github.com/mijicd")
       )
     ),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
@@ -47,9 +53,9 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   .settings(
     libraryDependencies ++= Seq(
       "io.monix" %%% "monix"       % "3.1.0",
-      "dev.zio"  %%% "zio"         % "1.0.0-RC17",
-      "dev.zio"  %%% "zio-test"    % "1.0.0-RC17",
-      "dev.zio"  %% "zio-test-sbt" % "1.0.0-RC17" % "test"
+      "dev.zio"  %%% "zio"         % "1.0.0-RC18",
+      "dev.zio"  %%% "zio-test"    % "1.0.0-RC18",
+      "dev.zio"  %% "zio-test-sbt" % "1.0.0-RC18" % "test"
     )
   )
 
