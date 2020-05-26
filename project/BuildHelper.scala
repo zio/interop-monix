@@ -7,8 +7,8 @@ import sbtbuildinfo._
 import BuildInfoKeys._
 
 object BuildHelper {
-  val testDeps        = Seq("org.scalacheck"  %% "scalacheck"   % "1.14.3" % "test")
-  val compileOnlyDeps = Seq("com.github.ghik" %% "silencer-lib" % "1.4.2"  % "provided")
+  val testDeps        = Seq("org.scalacheck" %% "scalacheck" % "1.14.3" % "test")
+  val compileOnlyDeps = Seq("com.github.ghik" %% "silencer-lib" % "1.4.2" % "provided")
 
   private val stdOptions = Seq(
     "-deprecation",
@@ -67,45 +67,46 @@ object BuildHelper {
           "-Xexperimental",
           "-Ywarn-unused-import"
         ) ++ std2xOptions
-      case _ => Seq.empty
+      case _             => Seq.empty
     }
 
-  def stdSettings(prjName: String) = Seq(
-    name := s"$prjName",
-    scalacOptions := stdOptions,
-    crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12"),
-    scalaVersion in ThisBuild := crossScalaVersions.value.head,
-    scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
-    libraryDependencies ++= compileOnlyDeps ++ testDeps ++ Seq(
-      compilerPlugin("org.typelevel"   %% "kind-projector"  % "0.10.3"),
-      compilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.4.2")
-    ),
-    parallelExecution in Test := true,
-    incOptions ~= (_.withLogRecompileOnMacro(false)),
-    autoAPIMappings := true,
-    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library"),
-    Compile / unmanagedSourceDirectories ++= {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, x)) if x <= 11 =>
-          CrossType.Full.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + "-2.11")) ++
-            CrossType.Full.sharedSrcDir(baseDirectory.value, "test").toList.map(f => file(f.getPath + "-2.11"))
-        case Some((2, x)) if x >= 12 =>
-          CrossType.Full.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + "-2.12+")) ++
-            CrossType.Full.sharedSrcDir(baseDirectory.value, "test").toList.map(f => file(f.getPath + "-2.12+"))
-        case _ => Nil
+  def stdSettings(prjName: String) =
+    Seq(
+      name := s"$prjName",
+      scalacOptions := stdOptions,
+      crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12"),
+      scalaVersion in ThisBuild := crossScalaVersions.value.head,
+      scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
+      libraryDependencies ++= compileOnlyDeps ++ testDeps ++ Seq(
+        compilerPlugin("org.typelevel"   %% "kind-projector"  % "0.10.3"),
+        compilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.4.2")
+      ),
+      parallelExecution in Test := true,
+      incOptions ~= (_.withLogRecompileOnMacro(false)),
+      autoAPIMappings := true,
+      unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library"),
+      Compile / unmanagedSourceDirectories ++= {
+        CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, x)) if x <= 11 =>
+            CrossType.Full.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + "-2.11")) ++
+              CrossType.Full.sharedSrcDir(baseDirectory.value, "test").toList.map(f => file(f.getPath + "-2.11"))
+          case Some((2, x)) if x >= 12 =>
+            CrossType.Full.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + "-2.12+")) ++
+              CrossType.Full.sharedSrcDir(baseDirectory.value, "test").toList.map(f => file(f.getPath + "-2.12+"))
+          case _                       => Nil
+        }
+      },
+      Test / unmanagedSourceDirectories ++= {
+        CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, x)) if x <= 11 =>
+            Seq(file(sourceDirectory.value.getPath + "/test/scala-2.11"))
+          case Some((2, x)) if x >= 12 =>
+            Seq(
+              file(sourceDirectory.value.getPath + "/test/scala-2.12"),
+              file(sourceDirectory.value.getPath + "/test/scala-2.12+")
+            )
+          case _                       => Nil
+        }
       }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, x)) if x <= 11 =>
-          Seq(file(sourceDirectory.value.getPath + "/test/scala-2.11"))
-        case Some((2, x)) if x >= 12 =>
-          Seq(
-            file(sourceDirectory.value.getPath + "/test/scala-2.12"),
-            file(sourceDirectory.value.getPath + "/test/scala-2.12+")
-          )
-        case _ => Nil
-      }
-    }
-  )
+    )
 }
