@@ -1,14 +1,30 @@
-import sbt._
-import Keys._
-
 import explicitdeps.ExplicitDepsPlugin.autoImport._
-import sbtcrossproject.CrossPlugin.autoImport.CrossType
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
+import sbt.Keys._
+import sbt._
+import sbtbuildinfo.BuildInfoKeys._
 import sbtbuildinfo._
-import BuildInfoKeys._
+import sbtcrossproject.CrossPlugin.autoImport._
 
 object BuildHelper {
-  val testDeps        = Seq("org.scalacheck" %% "scalacheck" % "1.14.3" % "test")
-  val compileOnlyDeps = Seq("com.github.ghik" %% "silencer-lib" % "1.4.2" % "provided")
+  private val versions: Map[String, String] = {
+    import org.snakeyaml.engine.v2.api.{ Load, LoadSettings }
+
+    import java.util.{ List => JList, Map => JMap }
+    import scala.jdk.CollectionConverters._
+
+    val doc = new Load(LoadSettings.builder().build())
+      .loadFromReader(scala.io.Source.fromFile(".github/workflows/ci.yml").bufferedReader())
+
+    val yaml = doc.asInstanceOf[JMap[String, JMap[String, JMap[String, JMap[String, JMap[String, JList[String]]]]]]]
+
+    val list = yaml.get("jobs").get("testJVM").get("strategy").get("matrix").get("scala").asScala
+
+    list.map(v => (v.split('.').take(2).mkString("."), v)).toMap
+  }
+
+  val Scala212: String = versions("2.12")
+  val Scala213: String = versions("2.13")
 
   private val stdOptions = Seq(
     "-deprecation",
@@ -16,33 +32,43 @@ object BuildHelper {
     "UTF-8",
     "-feature",
     "-unchecked"
-  )
+  ) ++ {
+    if (sys.env.contains("CI"))
+      Seq("-Xfatal-warnings")
+    else
+      Nil // to enable Scalafix locally
+  }
 
   private val std2xOptions = Seq(
-    "-Xfatal-warnings",
     "-language:higherKinds",
     "-language:existentials",
     "-explaintypes",
     "-Yrangepos",
-    "-Xsource:2.13",
-    "-Xlint:_,-type-parameter-shadow",
+    "-Xlint:_,-missing-interpolator,-type-parameter-shadow",
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard"
   )
 
-  val buildInfoSettings = Seq(
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, isSnapshot),
-    buildInfoPackage := "zio",
-    buildInfoObject := "BuildInfo"
-  )
+  private def optimizerOptions(optimize: Boolean) =
+    if (optimize)
+      Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:zio.internal.**"
+      )
+    else Nil
 
-  private val optimizerOptions =
-    Seq("-opt:l:inline", "-opt-inline-from:zio.internal.**")
+  def buildInfoSettings(packageName: String) =
+    Seq(
+      buildInfoKeys := Seq[BuildInfoKey](organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot),
+      buildInfoPackage := packageName
+    )
 
-  def extraOptions(scalaVersion: String) =
+  def extraOptions(scalaVersion: String, optimize: Boolean) =
     CrossVersion.partialVersion(scalaVersion) match {
       case Some((2, 13)) =>
-        std2xOptions ++ optimizerOptions
+        Seq(
+          "-Ywarn-unused:params,-implicits"
+        ) ++ std2xOptions ++ optimizerOptions(optimize)
       case Some((2, 12)) =>
         Seq(
           "-opt-warnings",
@@ -54,8 +80,13 @@ object BuildHelper {
           "-Ywarn-inaccessible",
           "-Ywarn-infer-any",
           "-Ywarn-nullary-override",
-          "-Ywarn-nullary-unit"
-        ) ++ std2xOptions ++ optimizerOptions
+          "-Ywarn-nullary-unit",
+          "-Ywarn-unused:params,-implicits",
+          "-Xfuture",
+          "-Xsource:2.13",
+          "-Xmax-classfile-name",
+          "242"
+        ) ++ std2xOptions ++ optimizerOptions(optimize)
       case Some((2, 11)) =>
         Seq(
           "-Ypartial-unification",
@@ -65,48 +96,73 @@ object BuildHelper {
           "-Ywarn-nullary-override",
           "-Ywarn-nullary-unit",
           "-Xexperimental",
-          "-Ywarn-unused-import"
+          "-Ywarn-unused-import",
+          "-Xfuture",
+          "-Xsource:2.13",
+          "-Xmax-classfile-name",
+          "242"
         ) ++ std2xOptions
       case _             => Seq.empty
     }
 
+  def platformSpecificSources(platform: String, conf: String, baseDirectory: File)(versions: String*) =
+    for {
+      platform <- List("shared", platform)
+      version  <- "scala" :: versions.toList.map("scala-" + _)
+      result    = baseDirectory.getParentFile / platform.toLowerCase / "src" / conf / version
+      if result.exists
+    } yield result
+
+  def crossPlatformSources(scalaVer: String, platform: String, conf: String, baseDir: File) = {
+    val versions = CrossVersion.partialVersion(scalaVer) match {
+      case Some((2, 11)) =>
+        List("2.11+", "2.11-2.12")
+      case Some((2, 12)) =>
+        List("2.11+", "2.12+", "2.11-2.12", "2.12-2.13")
+      case Some((2, 13)) =>
+        List("2.11+", "2.12+", "2.13+", "2.12-2.13")
+      case Some((3, _))  =>
+        List("2.11+", "2.12+", "2.13+")
+      case _             =>
+        List()
+    }
+    platformSpecificSources(platform, conf, baseDir)(versions: _*)
+  }
+
+  lazy val crossProjectSettings = Seq(
+    Compile / unmanagedSourceDirectories ++= {
+      crossPlatformSources(
+        scalaVersion.value,
+        crossProjectPlatform.value.identifier,
+        "main",
+        baseDirectory.value
+      )
+    },
+    Test / unmanagedSourceDirectories ++= {
+      crossPlatformSources(
+        scalaVersion.value,
+        crossProjectPlatform.value.identifier,
+        "test",
+        baseDirectory.value
+      )
+    }
+  )
+
   def stdSettings(prjName: String) =
     Seq(
       name := s"$prjName",
-      scalacOptions := stdOptions,
-      crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12"),
-      scalaVersion in ThisBuild := crossScalaVersions.value.head,
-      scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
-      libraryDependencies ++= compileOnlyDeps ++ testDeps ++ Seq(
-        compilerPlugin("org.typelevel"   %% "kind-projector"  % "0.10.3"),
-        compilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.4.2")
-      ),
-      parallelExecution in Test := true,
+      crossScalaVersions := Seq(Scala212, Scala213),
+      ThisBuild / scalaVersion := Scala213,
+      scalacOptions ++= stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
+      Test / parallelExecution := true,
       incOptions ~= (_.withLogRecompileOnMacro(false)),
       autoAPIMappings := true,
-      unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library"),
-      Compile / unmanagedSourceDirectories ++= {
-        CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((2, x)) if x <= 11 =>
-            CrossType.Full.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + "-2.11")) ++
-              CrossType.Full.sharedSrcDir(baseDirectory.value, "test").toList.map(f => file(f.getPath + "-2.11"))
-          case Some((2, x)) if x >= 12 =>
-            CrossType.Full.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + "-2.12+")) ++
-              CrossType.Full.sharedSrcDir(baseDirectory.value, "test").toList.map(f => file(f.getPath + "-2.12+"))
-          case _                       => Nil
-        }
-      },
-      Test / unmanagedSourceDirectories ++= {
-        CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((2, x)) if x <= 11 =>
-            Seq(file(sourceDirectory.value.getPath + "/test/scala-2.11"))
-          case Some((2, x)) if x >= 12 =>
-            Seq(
-              file(sourceDirectory.value.getPath + "/test/scala-2.12"),
-              file(sourceDirectory.value.getPath + "/test/scala-2.12+")
-            )
-          case _                       => Nil
-        }
-      }
+      unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
+    )
+
+  def jsSettings =
+    Seq(
+      libraryDependencies += "io.github.cquiroz" %%% "scala-java-time"      % "2.3.0",
+      libraryDependencies += "io.github.cquiroz" %%% "scala-java-time-tzdb" % "2.3.0"
     )
 }
