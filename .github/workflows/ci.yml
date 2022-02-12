@@ -7,7 +7,9 @@ env:
 on:
   pull_request:
   push:
-    branches: ['master']
+    branches:
+      - 'master'
+      - 'series/2.x'
   release:
     types:
       - published
@@ -59,10 +61,6 @@ jobs:
   testJS:
     runs-on: ubuntu-20.04
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        java: '17'
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v2.4.0
@@ -72,7 +70,7 @@ jobs:
         uses: actions/setup-java@v2.5.0
         with:
           distribution: temurin
-          java-version: ${{ matrix.java }}
+          java-version: 17
           check-latest: true
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
