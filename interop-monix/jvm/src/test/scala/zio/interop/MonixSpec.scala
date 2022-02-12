@@ -78,7 +78,7 @@ object MonixSpec extends DefaultRunnableSpec {
         },
         testM("returns a `Coeval` that produces the value from `IO`.") {
           val value  = 10
-          val coeval = IO.succeed(value).toCoeval.map(_.runTry)
+          val coeval = IO.succeed(value).toCoeval.map(_.runTry())
 
           assertM(coeval)(equalTo(Success(10)))
         }
