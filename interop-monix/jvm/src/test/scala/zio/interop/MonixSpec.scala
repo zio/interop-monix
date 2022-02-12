@@ -5,7 +5,7 @@ import _root_.monix.execution.Scheduler
 import zio.interop.monix._
 import zio.test.Assertion._
 import zio.test._
-import zio.IO
+import zio._
 
 import scala.util.Success
 
@@ -44,7 +44,7 @@ object MonixSpec extends DefaultRunnableSpec {
         },
         testM("returns a `Task` that produces the value from `IO`.") {
           val value = 10
-          val task  = IO.succeed(value).toTask.map(_.runSyncUnsafe())
+          val task  = UIO(value).toTask.map(_.runSyncUnsafe())
 
           assertM(task)(equalTo(10))
         }
@@ -78,7 +78,7 @@ object MonixSpec extends DefaultRunnableSpec {
         },
         testM("returns a `Coeval` that produces the value from `IO`.") {
           val value  = 10
-          val coeval = IO.succeed(value).toCoeval.map(_.runTry())
+          val coeval = UIO(value).toCoeval.map(_.runTry())
 
           assertM(coeval)(equalTo(Success(10)))
         }
