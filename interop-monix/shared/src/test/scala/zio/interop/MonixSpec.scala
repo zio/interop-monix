@@ -5,15 +5,13 @@ import _root_.monix.execution.Scheduler
 import zio.interop.monix._
 import zio.test.Assertion._
 import zio.test._
-import zio.IO
-
-import scala.util.Success
+import zio._
 
 object MonixSpec extends DefaultRunnableSpec {
 
   implicit val scheduler: Scheduler = Scheduler(runner.platform.executor.asEC)
 
-  override def spec =
+  def spec =
     suite("MonixSpec")(
       suite("IO.fromTask")(
         testM("return an `IO` that fails if `Task` failed.") {
@@ -43,10 +41,11 @@ object MonixSpec extends DefaultRunnableSpec {
           assertM(task)(equalTo(eval.Task.raiseError(error)))
         },
         testM("returns a `Task` that produces the value from `IO`.") {
-          val value = 10
-          val task  = IO.succeed(value).toTask.map(_.runSyncUnsafe())
-
-          assertM(task)(equalTo(10))
+          for {
+            value  <- UIO(10)
+            task   <- UIO(value).toTask
+            result <- ZIO.fromFuture(_ => task.runToFuture)
+          } yield assert(result)(equalTo(value))
         }
       ),
       suite("IO.fromCoeval")(
@@ -78,9 +77,9 @@ object MonixSpec extends DefaultRunnableSpec {
         },
         testM("returns a `Coeval` that produces the value from `IO`.") {
           val value  = 10
-          val coeval = IO.succeed(value).toCoeval.map(_.runTry())
+          val coeval = UIO(value).toCoeval.map(_.runTry())
 
-          assertM(coeval)(equalTo(Success(10)))
+          assertM(coeval)(isSuccess(equalTo(value)))
         }
       )
     )

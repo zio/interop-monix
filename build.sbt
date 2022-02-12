@@ -8,7 +8,8 @@ inThisBuild(
   List(
     developers := List(
       Developer("jdegoes", "John De Goes", "john@degoes.net", url("https://degoes.net")),
-      Developer("mijicd", "Dejan Mijic", "dmijic@acm.org", url("https://github.com/mijicd"))
+      Developer("mijicd", "Dejan Mijic", "dmijic@acm.org", url("https://github.com/mijicd")),
+      Developer("quelgar", "Lachlan O'Dea", "lodea@mac.com", url("https://github.com/quelgar"))
     ),
     homepage := Some(url("https://github.com/zio/interop-monix/")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
@@ -41,10 +42,10 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   .settings(buildInfoSettings("zio.interop.monix"))
   .settings(
     libraryDependencies ++= Seq(
-      "io.monix" %%% "monix"        % "3.2.2",
-      "dev.zio"  %%% "zio"          % "1.0.0-RC18-2",
-      "dev.zio"  %%% "zio-test"     % "1.0.0-RC18-2",
-      "dev.zio"   %% "zio-test-sbt" % "1.0.0-RC21-2" % Test
+      "io.monix" %%% "monix"        % "3.4.0",
+      "dev.zio"  %%% "zio"          % "1.0.13",
+      "dev.zio"  %%% "zio-test"     % "1.0.13",
+      "dev.zio"  %%% "zio-test-sbt" % "1.0.13" % Test
     )
   )
 
