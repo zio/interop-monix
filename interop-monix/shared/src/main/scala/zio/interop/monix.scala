@@ -4,7 +4,7 @@ import _root_.monix.eval
 import _root_.monix.execution.Scheduler
 import zio.{ IO, Task, UIO }
 
-object monix {
+package object monix {
   implicit class IOObjOps(private val obj: IO.type) extends AnyVal {
     def fromTask[A](task: eval.Task[A])(implicit scheduler: Scheduler): Task[A] =
       Task.fromFuture(_ => task.runToFuture)
