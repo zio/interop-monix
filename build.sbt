@@ -45,7 +45,7 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
       "io.monix" %%% "monix"        % "3.4.0",
       "dev.zio"  %%% "zio"          % "1.0.13",
       "dev.zio"  %%% "zio-test"     % "1.0.13",
-      "dev.zio"   %% "zio-test-sbt" % "1.0.13" % Test
+      "dev.zio"  %%% "zio-test-sbt" % "1.0.13" % Test
     )
   )
 
