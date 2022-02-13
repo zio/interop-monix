@@ -1,91 +1,86 @@
-# Interop Monix
+# Monix Interoperability for ZIO
 
 | Project Stage | CI | Release | Snapshot | Discord |
 | --- | --- | --- | --- | --- |
 | [![Project stage][Stage]][Stage-Page] | ![CI][Badge-CI] | [![Release Artifacts][Badge-SonatypeReleases]][Link-SonatypeReleases] | [![Snapshot Artifacts][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots] | [![Discord][Badge-Discord]][Link-Discord] |
 
-## Task conversions
+This library provides interoperability between **Monix 3.4** and **ZIO 1 and ZIO 2**.
 
-Interop layer provides the following conversions:
+## Tasks
 
-- from `Task[A]` to `UIO[Task[A]]`
-- from `Task[A]` to `Task[A]`
-
-To convert an `IO` value to `Task`, use the following method:
+Monix tasks can be converted to ZIO tasks:
 
 ```scala
-def toTask: UIO[eval.Task[A]]
+import zio._
+import zio.interop.monix._
+import monix.eval
+
+val monixTask: eval.Task[String] = ???
+
+val zioTask: Task[String] = ZIO.fromMonixTask(monixTask)
 ```
 
-To perform conversion in other direction, use the following extension method
-available on `IO` companion object:
+The conversion is lazy: the Monix task will only be executed if the returned ZIO task is executed.
+
+ZIO tasks can be converted to Monix tasks:
 
 ```scala
-def fromTask[A](task: eval.Task[A])(implicit scheduler: Scheduler): Task[A]
-```
-
-Note that in order to convert the `Task` to an `IO`, an appropriate `Scheduler`
-needs to be available.
-
-### Example
-
-```scala
-import monix.eval.Task
+import zio._
+import zio.interop.monix._
+import monix.eval
 import monix.execution.Scheduler.Implicits.global
-import zio.{ IO, DefaultRuntime }
+
+val zioTask: Task[String] = ???
+
+val createMonixTask: UIO[eval.Task[String]] = zioTask.toMonixTask()
+
+// illustrative, you wouldn't usually do things this way
+val monixTask: eval.Task[String] = Runtime.default.unsafeRun(createMonixTask)
+val stringResult = monixTask.runSyncUnsafe
+```
+
+The conversion is lazy: the ZIO effect so converted will only be executed if the returned Monix task is executed.
+
+Sometimes you need to provide a Monix task in a context where using a ZIO effect is difficult. For example, when an API requires you to provide a function that returns a Monix task. In these situations, the `toMonixTaskUsingRuntime` method can be used:
+
+```scala
+import zio._
 import zio.interop.monix._
+import monix.eval
 
-object UnsafeExample extends DefaultRuntime {
-  def main(args: Array[String]): Unit = {
-    val io1 = IO.succeed(10)
-    val t1  = unsafeRun(io1.toTask)
+def monixBasedApi(f: String => eval.Task[Unit]): eval.Task[Unit] = ???
 
-    t1.runToFuture.foreach(r => println(s"IO to task result is $r"))
+def zioBasedProcessor(s: String): Task[Unit] = ???
 
-    val t2  = Task(10)
-    val io2 = IO.fromTask(t2).map(r => s"Task to IO result is $r")
+val zioEffects = for {
+    zioRuntime <- ZIO.runtime[Any]
+    monixTask = 
+    _ <- ZIO.fromMonixTask {
+        monixBasedApi(s =>
+            zioBasedProcessor(s).toMonixTaskUsingRuntime(zioRuntime)
+        )
+    }
+} yield ()
+```
 
-    println(unsafeRun(io2))
-  }
+Cancellation/Interruption is propagated between the effect systems. Interrupting a ZIO task based on a Monix task will cancel the underlying Monix task and vice-versa. Be aware that ZIO interruption does not return until cancellation effects have completed, whereas Monix cancellation returns as soon as the signal is sent, without waiting for the cancellation effects to complete.
+
+## Monix Scheduler
+
+Sometimes it is useful to have a Monix `Scheduler` available for interop purposes. The `Runtime#monixScheduler` method will create a scheduler that shares its execution context with the ZIO runtime:
+
+```scala
+import zio._
+import zio.interop.monix._
+import monix.execution.Scheduler
+
+ZIO.runtime[Any].flatMap { runtime =>
+    implicit val monixScheduler: Scheduler = runtime.monixScheduler()
+
+    // do Monixy things
 }
 ```
 
-## Coeval conversions
-
-To convert an `IO` value to `Coeval`, use the following method:
-
-```scala
-def toCoeval: UIO[eval.Coeval[A]]
-```
-
-To perform conversion in other direction, use the following extension method
-available on `IO` companion object:
-
-```scala
-def fromCoeval[A](coeval: eval.Coeval[A]): Task[A]
-```
-
-### Example
-
-```scala
-import monix.eval.Coeval
-import zio.{ IO, DefaultRuntime }
-import zio.interop.monix._
-
-object UnsafeExample extends DefaultRuntime {
-  def main(args: Array[String]): Unit = {
-    val io1 = IO.succeed(10)
-    val c1  = unsafeRun(io1.toCoeval) 
-
-    println(s"IO to coeval result is ${c1.value}")
-
-    val c2  = Coeval(10)
-    val io2 = IO.fromCoeval(c2).map(r => s"Coeval to IO result is $r")
-
-    println(unsafeRun(io2))
-  }
-}
-```
 
 [Badge-CI]: https://github.com/zio/interop-monix/workflows/CI/badge.svg
 [Badge-Discord]: https://img.shields.io/discord/629491597070827530?logo=discord
