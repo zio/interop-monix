@@ -115,7 +115,7 @@ object MonixTaskSpec extends DefaultRunnableSpec {
         testM("converts a failed ZIO task to a failed Monix task") {
           val error = new Exception("ZIO operation failed")
           val io    = ZIO.fail(error)
-          val test  = io.toMonixTask.flatMap(ZIO.fromMonixTask(_)).either
+          val test  = io.toMonixTask.flatMap[Any, Throwable, Nothing](ZIO.fromMonixTask(_)).either
           assertM(test)(isLeft(equalTo(error)))
         },
         testM("propagates cancellation from Monix to ZIO") {
@@ -142,7 +142,7 @@ object MonixTaskSpec extends DefaultRunnableSpec {
             wasCancelled <- ZIO.succeed(cancelled).repeatUntil(Predef.identity)
           } yield wasCancelled
           assertM(test)(isTrue)
-        } @@ jvmOnly @@ timeout(500.milliseconds),
+        } @@ jvmOnly @@ timeout(5.seconds),
         testM("only executes the ZIO effect if the Monix task is executed") {
           @volatile var executed: Boolean = false
           val io                          = ZIO.succeed {
