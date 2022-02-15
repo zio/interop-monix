@@ -50,7 +50,7 @@ object MonixTaskSpec extends DefaultRunnableSpec {
           }
           val io                = for {
             orig    <- ZIO.fromMonixTask(monixTask)
-            current <- ZIO.succeed(testVar)
+            current <- UIO(testVar)
           } yield ((orig, current))
           assertM(io)(equalTo((0, 1)))
         },
