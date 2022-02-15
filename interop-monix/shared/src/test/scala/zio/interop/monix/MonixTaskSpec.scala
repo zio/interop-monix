@@ -71,7 +71,7 @@ object MonixTaskSpec extends DefaultRunnableSpec {
             executed = false
           } *> {
             ZIO.fromMonixTask(monixTask)
-            ZIO.succeed(executed)
+            UIO(executed)
           }
           assertM(test)(isFalse)
         },
