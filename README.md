@@ -54,7 +54,6 @@ def zioBasedProcessor(s: String): Task[Unit] = ???
 
 val zioEffects = for {
     zioRuntime <- ZIO.runtime[Any]
-    monixTask = 
     _ <- ZIO.fromMonixTask {
         monixBasedApi(s =>
             zioBasedProcessor(s).toMonixTaskUsingRuntime(zioRuntime)
