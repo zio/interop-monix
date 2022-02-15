@@ -86,22 +86,22 @@ object MonixTaskSpec extends DefaultRunnableSpec {
             }
           }
           for {
-            _            <- ZIO.succeed {
+            _            <- ZIO.effectTotal {
                               cancelled = false
                               running = false
                             }
             fiber        <- ZIO.fromMonixTask(monixTask).fork
             // wait until the monix task is running before interrupting the fiber
-            _            <- ZIO.succeed(running).repeatUntil(Predef.identity)
+            _            <- UIO(running).repeatUntil(Predef.identity)
             exit         <- fiber.interrupt
-            wasCancelled <- ZIO.succeed(cancelled)
+            wasCancelled <- UIO(cancelled)
           } yield assertTrue(wasCancelled) && assertTrue(exit.interrupted)
         } @@ nonFlaky
       ),
       suite("ZIO#toMonixTask")(
         testM("converts a successful ZIO task to a Monix task") {
           @volatile var testVar = 0
-          val io                = ZIO.succeed {
+          val io                = ZIO.effectTotal {
             val old = testVar
             testVar = old + 1
             old
@@ -121,10 +121,10 @@ object MonixTaskSpec extends DefaultRunnableSpec {
         testM("propagates cancellation from Monix to ZIO") {
           @volatile var cancelled = false
           @volatile var running   = false
-          val io                  = ZIO.succeed {
+          val io                  = ZIO.effectTotal {
             running = true
           } *> ZIO.never.onInterrupt {
-            ZIO.succeed {
+            ZIO.effectTotal {
               cancelled = true
             }
           }
@@ -139,21 +139,21 @@ object MonixTaskSpec extends DefaultRunnableSpec {
                             }
             // Monix `fiber.cancel` doesn't wait for all the cancellation effects
             // to complete, so `cancelled` might not be true at first
-            wasCancelled <- ZIO.succeed(cancelled).repeatUntil(Predef.identity)
+            wasCancelled <- UIO(cancelled).repeatUntil(Predef.identity)
           } yield wasCancelled
           assertM(test)(isTrue)
         } @@ jvmOnly @@ timeout(5.seconds),
         testM("only executes the ZIO effect if the Monix task is executed") {
           @volatile var executed: Boolean = false
-          val io                          = ZIO.succeed {
+          val io                          = ZIO.effectTotal {
             executed = true
           }
           val test                        = for {
-            _      <- ZIO.succeed {
+            _      <- ZIO.effectTotal {
                         executed = false
                       }
             _      <- io.toMonixTask
-            result <- ZIO.succeed(executed)
+            result <- UIO(executed)
           } yield result
           assertM(test)(isFalse)
         }
