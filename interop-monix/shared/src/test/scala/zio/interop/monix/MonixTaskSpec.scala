@@ -67,7 +67,7 @@ object MonixTaskSpec extends DefaultRunnableSpec {
           val monixTask          = MTask.eval {
             executed = true
           }
-          val test               = ZIO.succeed {
+          val test               = ZIO.effectTotal {
             executed = false
           } *> {
             ZIO.fromMonixTask(monixTask)
