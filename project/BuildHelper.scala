@@ -25,6 +25,7 @@ object BuildHelper {
 
   val Scala212: String = versions("2.12")
   val Scala213: String = versions("2.13")
+  val Scala3: String   = versions("3.1")
 
   private val stdOptions = Seq(
     "-deprecation",
@@ -63,8 +64,36 @@ object BuildHelper {
       buildInfoPackage := packageName
     )
 
+  val dottySettings = Seq(
+    scalacOptions ++= {
+      if (scalaVersion.value == Scala3)
+        Seq("-noindent")
+      else
+        Seq()
+    },
+    Compile / doc / sources := {
+      val old = (Compile / doc / sources).value
+      if (scalaVersion.value == Scala3)
+        Nil
+      else
+        old
+    },
+    Test / parallelExecution := {
+      val old = (Test / parallelExecution).value
+      if (scalaVersion.value == Scala3)
+        false
+      else
+        old
+    }
+  )
+
   def extraOptions(scalaVersion: String, optimize: Boolean) =
     CrossVersion.partialVersion(scalaVersion) match {
+      case Some((3, _))  =>
+        Seq(
+          "-language:implicitConversions",
+          "-Xignore-scala2-macros"
+        )
       case Some((2, 13)) =>
         Seq(
           "-Ywarn-unused:params,-implicits"
@@ -151,7 +180,7 @@ object BuildHelper {
   def stdSettings(prjName: String) =
     Seq(
       name := s"$prjName",
-      crossScalaVersions := Seq(Scala212, Scala213),
+      crossScalaVersions := Seq(Scala212, Scala213, Scala3),
       ThisBuild / scalaVersion := Scala213,
       scalacOptions ++= stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
       Test / parallelExecution := true,
