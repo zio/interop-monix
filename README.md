@@ -4,7 +4,7 @@
 | --- | --- | --- | --- | --- |
 | [![Project stage][Stage]][Stage-Page] | ![CI][Badge-CI] | [![Release Artifacts][Badge-SonatypeReleases]][Link-SonatypeReleases] | [![Snapshot Artifacts][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots] | [![Discord][Badge-Discord]][Link-Discord] |
 
-This library provides interoperability between **Monix 3.4** and **ZIO 1 and ZIO 2**.
+This library provides interoperability between **Monix 3.4** and **ZIO 1 and ZIO 2**. Both JVM and Scala.js are supported.
 
 ## Tasks
 

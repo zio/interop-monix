@@ -64,6 +64,29 @@ object BuildHelper {
       buildInfoPackage := packageName
     )
 
+  val dottySettings = Seq(
+    scalacOptions ++= {
+      if (scalaVersion.value == Scala3)
+        Seq("-noindent")
+      else
+        Seq()
+    },
+    Compile / doc / sources := {
+      val old = (Compile / doc / sources).value
+      if (scalaVersion.value == Scala3)
+        Nil
+      else
+        old
+    },
+    Test / parallelExecution := {
+      val old = (Test / parallelExecution).value
+      if (scalaVersion.value == Scala3)
+        false
+      else
+        old
+    }
+  )
+
   def extraOptions(scalaVersion: String, optimize: Boolean) =
     CrossVersion.partialVersion(scalaVersion) match {
       case Some((3, _))  =>
