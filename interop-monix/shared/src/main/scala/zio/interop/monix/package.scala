@@ -13,18 +13,12 @@ import _root_.monix.execution.{ Scheduler => MScheduler, ExecutionModel }
  */
 package object monix {
 
-  implicit final class ZIORuntimeOps[R](private val runtime: Runtime[R]) extends AnyVal {
-
-    /**
-     * Creates a Monix scheduler that shares its execution context with this ZIO
-     * runtime.
-     */
-    def monixScheduler(executionModel: ExecutionModel = ExecutionModel.Default): MScheduler =
-      MScheduler(runtime.platform.executor.asEC, executionModel)
-
-  }
-
   implicit final class ZIOObjOps(private val unused: ZIO.type) extends AnyVal {
+
+    def monixScheduler(
+      executionModel: ExecutionModel = ExecutionModel.Default
+    )(implicit trace: ZTraceElement): UIO[MScheduler] =
+      ZIO.executor.map(e => MScheduler(e.asExecutionContext, executionModel))
 
     /**
      * Converts a Monix task into a ZIO task.
@@ -42,10 +36,11 @@ package object monix {
      *   The Monix execution model to use for the Monix execution. This only
      *   need be specified if you want to override the Monix default.
      */
-    def fromMonixTask[A](monixTask: MTask[A], executionModel: ExecutionModel = ExecutionModel.Default): Task[A] =
-      Task.runtime.flatMap { zioRuntime =>
-        Task.effectAsyncInterrupt[A] { cb =>
-          implicit val scheduler: MScheduler = zioRuntime.monixScheduler(executionModel)
+    def fromMonixTask[A](monixTask: MTask[A], executionModel: ExecutionModel = ExecutionModel.Default)(implicit
+      trace: ZTraceElement
+    ): Task[A] =
+      ZIO.monixScheduler(executionModel).flatMap { implicit scheduler =>
+        ZIO.asyncInterrupt[Any, Throwable, A] { cb =>
           try
           // runSyncStep will try to execute the Monix effects synchronously
           // if it fails before hitting an async boundary, the failure will be thrown
@@ -80,7 +75,7 @@ package object monix {
      * If the returned Monix task is cancelled, the underlying ZIO effect will
      * be interrupted.
      */
-    def toMonixTask: URIO[R, MTask[A]] = ZIO.runtime[R].map(toMonixTaskUsingRuntime)
+    def toMonixTask(implicit trace: ZTraceElement): URIO[R, MTask[A]] = ZIO.runtime[R].map(toMonixTaskUsingRuntime)
 
     /**
      * Converts this ZIO effect into a Monix task using a specified ZIO runtime
@@ -96,12 +91,12 @@ package object monix {
      * If the returned Monix task is cancelled, the underlying ZIO effect will
      * be interrupted.
      */
-    def toMonixTaskUsingRuntime(zioRuntime: Runtime[R]): MTask[A] =
+    def toMonixTaskUsingRuntime(zioRuntime: Runtime[R])(implicit trace: ZTraceElement): MTask[A] =
       MTask.cancelable { cb =>
         val cancelable = zioRuntime.unsafeRunAsyncCancelable(effect) { exit =>
           exit.fold(failed => cb.onError(failed.squash), cb.onSuccess)
         }
-        MTask.eval(cancelable(Fiber.Id.None)).void
+        MTask.eval(cancelable(FiberId.None)).void
       }
 
   }
