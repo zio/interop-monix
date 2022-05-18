@@ -17,7 +17,7 @@ package object monix {
 
     def monixScheduler(
       executionModel: ExecutionModel = ExecutionModel.Default
-    )(implicit trace: ZTraceElement): UIO[MScheduler] =
+    )(implicit trace: Trace): UIO[MScheduler] =
       ZIO.executor.map(e => MScheduler(e.asExecutionContext, executionModel))
 
     /**
@@ -37,7 +37,7 @@ package object monix {
      *   need be specified if you want to override the Monix default.
      */
     def fromMonixTask[A](monixTask: MTask[A], executionModel: ExecutionModel = ExecutionModel.Default)(implicit
-      trace: ZTraceElement
+      trace: Trace
     ): Task[A] =
       ZIO.monixScheduler(executionModel).flatMap { implicit scheduler =>
         ZIO.asyncInterrupt[Any, Throwable, A] { cb =>
@@ -75,7 +75,7 @@ package object monix {
      * If the returned Monix task is cancelled, the underlying ZIO effect will
      * be interrupted.
      */
-    def toMonixTask(implicit trace: ZTraceElement): URIO[R, MTask[A]] = ZIO.runtime[R].map(toMonixTaskUsingRuntime)
+    def toMonixTask(implicit trace: Trace): URIO[R, MTask[A]] = ZIO.runtime[R].map(toMonixTaskUsingRuntime)
 
     /**
      * Converts this ZIO effect into a Monix task using a specified ZIO runtime
@@ -91,7 +91,7 @@ package object monix {
      * If the returned Monix task is cancelled, the underlying ZIO effect will
      * be interrupted.
      */
-    def toMonixTaskUsingRuntime(zioRuntime: Runtime[R])(implicit trace: ZTraceElement): MTask[A] =
+    def toMonixTaskUsingRuntime(zioRuntime: Runtime[R])(implicit trace: Trace): MTask[A] =
       MTask.cancelable { cb =>
         val cancelable = zioRuntime.unsafeRunAsyncCancelable(effect) { exit =>
           exit.fold(failed => cb.onError(failed.squash), cb.onSuccess)
