@@ -17,14 +17,14 @@ object MonixTaskSpec extends ZIOSpecDefault {
           val monixTask = MTask.raiseError(error)
           val io        = ZIO.fromMonixTask(monixTask)
 
-          assertM(io.either)(isLeft(equalTo(error)))
+          assertZIO(io.either)(isLeft(equalTo(error)))
         },
         test("return a ZIO that succeeds if Monix task succeeded") {
           val result    = "monix task result"
           val monixTask = MTask.now(result)
           val io        = ZIO.fromMonixTask(monixTask)
 
-          assertM(io)(equalTo(result))
+          assertZIO(io)(equalTo(result))
         },
         test("converts a synchronous Monix task to a ZIO task") {
           @volatile var testVar = 0
@@ -35,9 +35,9 @@ object MonixTaskSpec extends ZIOSpecDefault {
           }
           val io                = for {
             orig    <- ZIO.fromMonixTask(monixTask)
-            current <- UIO.succeed(testVar)
+            current <- ZIO.succeed(testVar)
           } yield ((orig, current))
-          assertM(io)(equalTo((0, 1)))
+          assertZIO(io)(equalTo((0, 1)))
         },
         test("converts an asynchronous Monix task to a ZIO task") {
           @volatile var testVar = 0
@@ -48,9 +48,9 @@ object MonixTaskSpec extends ZIOSpecDefault {
           }
           val io                = for {
             orig    <- ZIO.fromMonixTask(monixTask)
-            current <- UIO.succeed(testVar)
+            current <- ZIO.succeed(testVar)
           } yield ((orig, current))
-          assertM(io)(equalTo((0, 1)))
+          assertZIO(io)(equalTo((0, 1)))
         },
         test("the ZIO task fails if a Monix async task fails") {
           val error     = new Exception("async monix failure")
@@ -58,7 +58,7 @@ object MonixTaskSpec extends ZIOSpecDefault {
             cb.onError(error)
           }
           val io        = ZIO.fromMonixTask(monixTask)
-          assertM(io.either)(isLeft(equalTo(error)))
+          assertZIO(io.either)(isLeft(equalTo(error)))
         },
         test("lazily executes a converted Monix task") {
           @volatile var executed = false
@@ -69,9 +69,9 @@ object MonixTaskSpec extends ZIOSpecDefault {
             executed = false
           } *> {
             ZIO.fromMonixTask(monixTask)
-            UIO.succeed(executed)
+            ZIO.succeed(executed)
           }
-          assertM(test)(isFalse)
+          assertZIO(test)(isFalse)
         },
         test("propagates cancellation from ZIO to Monix") {
           @volatile var cancelled = false
@@ -90,9 +90,9 @@ object MonixTaskSpec extends ZIOSpecDefault {
                             }
             fiber        <- ZIO.fromMonixTask(monixTask).fork
             // wait until the monix task is running before interrupting the fiber
-            _            <- UIO.succeed(running).repeatUntil(Predef.identity)
+            _            <- ZIO.succeed(running).repeatUntil(Predef.identity)
             exit         <- fiber.interrupt
-            wasCancelled <- UIO.succeed(cancelled)
+            wasCancelled <- ZIO.succeed(cancelled)
           } yield assertTrue(wasCancelled) && assertTrue(exit.isInterrupted)
         } @@ nonFlaky
       ),
@@ -114,7 +114,7 @@ object MonixTaskSpec extends ZIOSpecDefault {
           val error = new Exception("ZIO operation failed")
           val io    = ZIO.fail(error)
           val test  = io.toMonixTask.flatMap[Any, Throwable, Nothing](ZIO.fromMonixTask(_)).either
-          assertM(test)(isLeft(equalTo(error)))
+          assertZIO(test)(isLeft(equalTo(error)))
         },
         test("propagates cancellation from Monix to ZIO") {
           @volatile var cancelled = false
@@ -137,9 +137,9 @@ object MonixTaskSpec extends ZIOSpecDefault {
                             }
             // Monix `fiber.cancel` doesn't wait for all the cancellation effects
             // to complete, so `cancelled` might not be true at first
-            wasCancelled <- UIO.succeed(cancelled).repeatUntil(Predef.identity)
+            wasCancelled <- ZIO.succeed(cancelled).repeatUntil(Predef.identity)
           } yield wasCancelled
-          assertM(test)(isTrue)
+          assertZIO(test)(isTrue)
         } @@ jvmOnly @@ timeout(5.seconds),
         test("only executes the ZIO effect if the Monix task is executed") {
           @volatile var executed: Boolean = false
@@ -151,9 +151,9 @@ object MonixTaskSpec extends ZIOSpecDefault {
                         executed = false
                       }
             _      <- io.toMonixTask
-            result <- UIO.succeed(executed)
+            result <- ZIO.succeed(executed)
           } yield result
-          assertM(test)(isFalse)
+          assertZIO(test)(isFalse)
         }
       )
     )
