@@ -33,7 +33,7 @@ lazy val root = project
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
   )
 
-val zioVersion = "2.0.0-RC6"
+val zioVersion = "2.0.0"
 
 lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   .in(file("interop-monix"))
@@ -45,7 +45,7 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   .settings(buildInfoSettings("zio.interop.monix"))
   .settings(
     libraryDependencies ++= Seq(
-      "io.monix" %%% "monix"        % "3.4.0",
+      "io.monix" %%% "monix"        % "3.4.1",
       "dev.zio"  %%% "zio"          % zioVersion,
       "dev.zio"  %%% "zio-test"     % zioVersion % Test,
       "dev.zio"  %%% "zio-test-sbt" % zioVersion % Test
