@@ -44,9 +44,9 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   .settings(
     libraryDependencies ++= Seq(
       "io.monix" %%% "monix"        % "3.4.1",
-      "dev.zio"  %%% "zio"          % "1.0.16",
-      "dev.zio"  %%% "zio-test"     % "1.0.16" % Test,
-      "dev.zio"  %%% "zio-test-sbt" % "1.0.16" % Test
+      "dev.zio"  %%% "zio"          % "2.0.1",
+      "dev.zio"  %%% "zio-test"     % "2.0.1" % Test,
+      "dev.zio"  %%% "zio-test-sbt" % "2.0.1" % Test
     )
   )
 
