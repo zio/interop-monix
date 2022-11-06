@@ -4,7 +4,7 @@ addSbtPlugin("com.github.cb372"                  % "sbt-explicit-dependencies" %
 addSbtPlugin("com.github.sbt"                    % "sbt-ci-release"            % "1.5.10")
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"                % "0.5.0")
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings"          % "3.0.2")
-addSbtPlugin("de.heikoseeberger"                 % "sbt-header"                % "5.7.0")
+addSbtPlugin("de.heikoseeberger"                 % "sbt-header"                % "5.8.0")
 addSbtPlugin("org.portable-scala"                % "sbt-scalajs-crossproject"  % "1.2.0")
 addSbtPlugin("org.scala-js"                      % "sbt-scalajs"               % "1.10.0")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                  % "2.3.3")
