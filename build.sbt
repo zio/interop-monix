@@ -11,7 +11,7 @@ inThisBuild(
       Developer("mijicd", "Dejan Mijic", "dmijic@acm.org", url("https://github.com/mijicd")),
       Developer("quelgar", "Lachlan O'Dea", "lodea@mac.com", url("https://github.com/quelgar"))
     ),
-    homepage := Some(url("https://github.com/zio/interop-monix/")),
+    homepage := Some(url("https://zio.dev/interop-monix/")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     organization := "dev.zio",
     organizationName := "John A. De Goes and the ZIO contributors",
