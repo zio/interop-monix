@@ -27,7 +27,7 @@ addCommandAlias("testJS", ";interopMonixJS/test")
 lazy val root = project
   .in(file("."))
   .enablePlugins(ScalaJSPlugin)
-  .aggregate(interopMonixJVM, interopMonixJS)
+  .aggregate(interopMonixJVM, interopMonixJS, docs)
   .settings(
     publish / skip := true,
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
@@ -52,3 +52,14 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
 
 lazy val interopMonixJVM = interopMonix.jvm
 lazy val interopMonixJS  = interopMonix.js.settings(jsSettings)
+
+lazy val docs = project
+  .in(file("interop-monix-docs"))
+  .settings(
+    publish / skip := true,
+    moduleName := "interop-monix-docs",
+    scalacOptions -= "-Yno-imports",
+    scalacOptions -= "-Xfatal-warnings"
+  )
+  .dependsOn(interopMonixJVM)
+  .enablePlugins(WebsitePlugin)
