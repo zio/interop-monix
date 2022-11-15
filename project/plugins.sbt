@@ -8,7 +8,7 @@ addSbtPlugin("de.heikoseeberger"                 % "sbt-header"                %
 addSbtPlugin("org.portable-scala"                % "sbt-scalajs-crossproject"  % "1.2.0")
 addSbtPlugin("org.scala-js"                      % "sbt-scalajs"               % "1.10.0")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                  % "2.3.3")
-addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"              % "2.4.6")
+addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"              % "2.5.0")
 addSbtPlugin("pl.project13.scala"                % "sbt-jmh"                   % "0.4.3")
 
 libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.3"
