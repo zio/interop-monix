@@ -11,7 +11,7 @@ inThisBuild(
       Developer("mijicd", "Dejan Mijic", "dmijic@acm.org", url("https://github.com/mijicd")),
       Developer("quelgar", "Lachlan O'Dea", "lodea@mac.com", url("https://github.com/quelgar"))
     ),
-    homepage := Some(url("https://github.com/zio/interop-monix/")),
+    homepage := Some(url("https://zio.dev/interop-monix/")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     organization := "dev.zio",
     organizationName := "John A. De Goes and the ZIO contributors",
@@ -27,7 +27,7 @@ addCommandAlias("testJS", ";interopMonixJS/test")
 lazy val root = project
   .in(file("."))
   .enablePlugins(ScalaJSPlugin)
-  .aggregate(interopMonixJVM, interopMonixJS)
+  .aggregate(interopMonixJVM, interopMonixJS, docs)
   .settings(
     publish / skip := true,
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
@@ -52,3 +52,14 @@ lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
 
 lazy val interopMonixJVM = interopMonix.jvm
 lazy val interopMonixJS  = interopMonix.js.settings(jsSettings)
+
+lazy val docs = project
+  .in(file("interop-monix-docs"))
+  .settings(
+    publish / skip := true,
+    moduleName := "interop-monix-docs",
+    scalacOptions -= "-Yno-imports",
+    scalacOptions -= "-Xfatal-warnings"
+  )
+  .dependsOn(interopMonixJVM)
+  .enablePlugins(WebsitePlugin)
