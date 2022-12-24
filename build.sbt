@@ -59,7 +59,14 @@ lazy val docs = project
     publish / skip := true,
     moduleName := "interop-monix-docs",
     scalacOptions -= "-Yno-imports",
-    scalacOptions -= "-Xfatal-warnings"
+    scalacOptions -= "-Xfatal-warnings",
+    projectName := "ZIO Interop Monix",
+    badgeInfo := Some(
+      BadgeInfo(
+        artifact = "zio-interop-monix_2.12",
+        projectStage = ProjectStage.ProductionReady
+      )
+    )
   )
   .dependsOn(interopMonixJVM)
   .enablePlugins(WebsitePlugin)

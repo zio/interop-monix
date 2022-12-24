@@ -6,6 +6,16 @@ sidebar_label: "ZIO Interop Monix"
 
 This library provides interoperability between **Monix 3.4** and **ZIO 1 and ZIO 2**. Both JVM and Scala.js are supported.
 
+@PROJECT_BADGES@
+
+## Installation
+
+In order to use this library, we need to add the following line in our `build.sbt` file:
+
+```scala
+libraryDependencies += "dev.zio" %% "zio-interop-monix" % "@VERSION@"
+```
+
 ## Tasks
 
 Monix tasks can be converted to ZIO tasks:
