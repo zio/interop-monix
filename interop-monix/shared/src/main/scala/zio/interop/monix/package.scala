@@ -15,10 +15,63 @@ package object monix {
 
   implicit final class ZIOObjOps(private val unused: ZIO.type) extends AnyVal {
 
+    /**
+     * Provides a Monix scheduler built on the ZIO executor.
+     *
+     * @param executionModel Provide this if you want to override the default Monix execution model.
+     */
     def monixScheduler(
       executionModel: ExecutionModel = ExecutionModel.Default
     )(implicit trace: Trace): UIO[MScheduler] =
       ZIO.executor.map(e => MScheduler(e.asExecutionContext, executionModel))
+
+    /**
+     * Provides a Monix scheduler built on the ZIO blocking executor.
+     *
+     * @param executionModel Provide this if you want to override the default Monix execution model.
+     */
+    def monixBlockingScheduler(
+      executionModel: ExecutionModel = ExecutionModel.Default
+    )(implicit trace: Trace): UIO[MScheduler] =
+      ZIO.blockingExecutor.map(e => MScheduler(e.asExecutionContext, executionModel))
+
+    /**
+     * Converts a Monix task into a ZIO task using a specified Monix scheduler.
+     *
+     * Interrupting the returned effect will cancel the underlying Monix task.
+     * The conversion is lazy: the Monix task is only executed if the returned
+     * ZIO task is executed.
+     *
+     * @param monixTask
+     *   The Monix task.
+     * @param monixScheduler
+     *   The Monix scheduler to use to execute the Monix task.
+     */
+    def fromMonixTaskUsingScheduler[A](monixTask: MTask[A])(implicit
+      trace: Trace,
+      monixScheduler: MScheduler
+    ): Task[A] =
+      ZIO.asyncInterrupt[Any, Throwable, A] { cb =>
+        try
+        // runSyncStep will try to execute the Monix effects synchronously
+        // if it fails before hitting an async boundary, the failure will be thrown
+        monixTask.runSyncStep match {
+          case Right(result)        =>
+            // Monix task ran synchronously and successfully
+            Right(ZIO.succeedNow(result))
+          case Left(asyncMonixTask) =>
+            // Monix task hit an async boundary, so we have to use the callback (cb)
+            // and return a cancelation effect
+            val cancelable = asyncMonixTask.runAsync { result =>
+              val zioEffect = ZIO.fromEither(result)
+              cb(zioEffect)
+            }
+            Left(ZIO.succeed(cancelable.cancel()))
+        } catch {
+          // Monix task failed during synchronous execution
+          case e: Throwable => Right(ZIO.fail(e))
+        }
+      }
 
     /**
      * Converts a Monix task into a ZIO task.
@@ -26,9 +79,6 @@ package object monix {
      * Interrupting the returned effect will cancel the underlying Monix task.
      * The conversion is lazy: the Monix task is only executed if the returned
      * ZIO task is executed.
-     *
-     * If the returned ZIO task is interrupted, the underlying Monix task will be
-     * cancelled.
      *
      * @param monixTask
      *   The Monix task.
@@ -40,29 +90,76 @@ package object monix {
       trace: Trace
     ): Task[A] =
       ZIO.monixScheduler(executionModel).flatMap { implicit scheduler =>
-        ZIO.asyncInterrupt[Any, Throwable, A] { cb =>
-          try
-          // runSyncStep will try to execute the Monix effects synchronously
-          // if it fails before hitting an async boundary, the failure will be thrown
-          monixTask.runSyncStep match {
-            case Right(result)        =>
-              // Monix task ran synchronously and successfully
-              Right(ZIO.succeedNow(result))
-            case Left(asyncMonixTask) =>
-              // Monix task hit an async boundary, so we have to use the callback (cb)
-              // and return a cancelation effect
-              val cancelable = asyncMonixTask.runAsync { result =>
-                val zioEffect = ZIO.fromEither(result)
-                cb(zioEffect)
-              }
-              Left(ZIO.succeed(cancelable.cancel()))
-          } catch {
-            // Monix task failed during synchronous execution
-            case e: Throwable => Right(ZIO.fail(e))
-          }
-        }
+        fromMonixTaskUsingScheduler(monixTask)
       }
 
+    /**
+     * Converts a blocking Monix task into a ZIO task.
+     *
+     * This is needed for Monix tasks that may block the thread, and should therefore be
+     * executed using ZIO's blocking executor.
+     *
+     * Interrupting the returned effect will cancel the underlying Monix task.
+     * The conversion is lazy: the Monix task is only executed if the returned
+     * ZIO task is executed.
+     *
+     * @param monixTask
+     *   The Monix task.
+     * @param executionModel
+     *   The Monix execution model to use for the Monix execution. This only
+     *   need be specified if you want to override the Monix default.
+     */
+    def fromMonixTaskBlocking[A](monixTask: MTask[A], executionModel: ExecutionModel = ExecutionModel.Default)(implicit
+      trace: Trace
+    ): Task[A] =
+      ZIO.monixBlockingScheduler(executionModel).flatMap { implicit scheduler =>
+        fromMonixTaskUsingScheduler(monixTask)
+      }
+
+    /**
+     * Constructs a Monix task using the Monix scheduler, and converts it into a ZIO task.
+     *
+     * Interrupting the returned effect will cancel the underlying Monix task.
+     * The conversion is lazy: the Monix task is only executed if the returned
+     * ZIO task is executed.
+     *
+     * @param monixTask
+     *   Function to construct a Monix task given a Monix scheduler.
+     * @param executionModel
+     *   The Monix execution model to use for the Monix execution. This only
+     *   need be specified if you want to override the Monix default.
+     */
+    def fromMonixTaskWithScheduler[A](
+      monixTask: MScheduler => MTask[A],
+      executionModel: ExecutionModel = ExecutionModel.Default
+    )(implicit trace: Trace): Task[A] =
+      ZIO.monixScheduler(executionModel).flatMap { implicit scheduler =>
+        fromMonixTaskUsingScheduler(monixTask(scheduler))
+      }
+
+    /**
+     * Constructs a blocking Monix task using the Monix scheduler, and converts it into a ZIO task.
+     *
+     * This is needed for Monix tasks that may block the thread, and should therefore be
+     * executed using ZIO's blocking executor.
+     *
+     * Interrupting the returned effect will cancel the underlying Monix task.
+     * The conversion is lazy: the Monix task is only executed if the returned
+     * ZIO task is executed.
+     *
+     * @param monixTask
+     *   Function to construct a Monix task given a Monix scheduler.
+     * @param executionModel
+     *   The Monix execution model to use for the Monix execution. This only
+     *   need be specified if you want to override the Monix default.
+     */
+    def fromMonixTaskBlockingWithScheduler[A](
+      monixTask: MScheduler => MTask[A],
+      executionModel: ExecutionModel = ExecutionModel.Default
+    )(implicit trace: Trace): Task[A] =
+      ZIO.monixBlockingScheduler(executionModel).flatMap { implicit scheduler =>
+        fromMonixTaskUsingScheduler(monixTask(scheduler))
+      }
   }
 
   implicit final class ExtraZioEffectOps[-R, +A](private val effect: ZIO[R, Throwable, A]) extends AnyVal {
