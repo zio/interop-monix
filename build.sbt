@@ -56,17 +56,14 @@ lazy val interopMonixJS  = interopMonix.js.settings(jsSettings)
 lazy val docs = project
   .in(file("interop-monix-docs"))
   .settings(
-    publish / skip := true,
     moduleName := "interop-monix-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
     projectName := "ZIO Interop Monix",
-    badgeInfo := Some(
-      BadgeInfo(
-        artifact = "zio-interop-monix_2.12",
-        projectStage = ProjectStage.ProductionReady
-      )
-    )
+    mainModuleName := (interopMonixJVM / moduleName).value,
+    projectStage := ProjectStage.ProductionReady,
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(interopMonixJVM),
+    docsPublishBranch := "master"
   )
   .dependsOn(interopMonixJVM)
   .enablePlugins(WebsitePlugin)
