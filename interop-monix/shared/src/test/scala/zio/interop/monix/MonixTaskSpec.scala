@@ -109,13 +109,13 @@ object MonixTaskSpec extends ZIOSpecDefault {
             result  <- ZIO.fromMonixTask(monixTask)
             current <- ZIO.succeed(testVar)
           } yield assertTrue(result == 0) && assertTrue(current == result + 1)
-        },
+        } @@ nonFlaky,
         test("converts a failed ZIO task to a failed Monix task") {
           val error = new Exception("ZIO operation failed")
           val io    = ZIO.fail(error)
           val test  = io.toMonixTask.flatMap[Any, Throwable, Nothing](ZIO.fromMonixTask(_)).either
           assertZIO(test)(isLeft(equalTo(error)))
-        },
+        } @@ nonFlaky,
         test("propagates cancellation from Monix to ZIO") {
           @volatile var cancelled = false
           @volatile var running   = false
