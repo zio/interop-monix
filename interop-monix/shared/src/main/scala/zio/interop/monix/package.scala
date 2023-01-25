@@ -190,9 +190,14 @@ package object monix {
      */
     def toMonixTaskUsingRuntime(zioRuntime: Runtime[R])(implicit trace: Trace): MTask[A] =
       MTask.cancelable { cb =>
-        Unsafe.unsafeCompat { implicit unsafe =>
-          val fiber = zioRuntime.unsafe.fork(effect)
-          fiber.unsafe.addObserver(_.foldExit(failed => cb.onError(failed.squash), cb.onSuccess))
+        val workflow = effect.onExit {
+          _.foldCauseZIO(
+            cause => ZIO.succeed(cb.onError(cause.squashTrace)),
+            value => ZIO.succeed(cb.onSuccess(value))
+          )
+        }
+        Unsafe.unsafe { implicit unsafe =>
+          val fiber = zioRuntime.unsafe.fork(workflow)
           MTask.eval(zioRuntime.unsafe.run(fiber.interrupt)).void
         }
       }

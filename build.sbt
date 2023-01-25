@@ -33,7 +33,7 @@ lazy val root = project
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
   )
 
-val zioVersion = "2.0.0"
+val zioVersion = "2.0.6"
 
 lazy val interopMonix = crossProject(JSPlatform, JVMPlatform)
   .in(file("interop-monix"))
