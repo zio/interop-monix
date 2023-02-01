@@ -1,0 +1,5 @@
+{
+  "name": "@zio.dev/interop-monix",
+  "description": "ZIO Interop Monix Documentation",
+  "license": "Apache-2.0"
+}
