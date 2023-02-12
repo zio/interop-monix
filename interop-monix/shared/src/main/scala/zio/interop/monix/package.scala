@@ -58,7 +58,7 @@ package object monix {
         monixTask.runSyncStep match {
           case Right(result)        =>
             // Monix task ran synchronously and successfully
-            Right(ZIO.succeedNow(result))
+            Right(ZIO.succeed(result))
           case Left(asyncMonixTask) =>
             // Monix task hit an async boundary, so we have to use the callback (cb)
             // and return a cancelation effect
