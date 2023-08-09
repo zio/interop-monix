@@ -16,7 +16,7 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - name: Checkout current branch
@@ -35,7 +35,7 @@ jobs:
         run: ./sbt fmtCheck
 
   testJVM:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -59,7 +59,7 @@ jobs:
         run: ./sbt ++${{ matrix.scala }}! testJVM
 
   testJS:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - name: Checkout current branch
@@ -78,14 +78,14 @@ jobs:
         run: ./sbt testJS
 
   ci:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [lint, testJVM, testJS]
     steps:
       - name: Aggregate outcomes
         run: echo "build succeeded"
 
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     needs: [ci]
     if: github.event_name != 'pull_request'
