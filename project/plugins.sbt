@@ -12,4 +12,4 @@ addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"              %
 addSbtPlugin("pl.project13.scala"                % "sbt-jmh"                   % "0.4.5")
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"           % "0.3.10")
 
-libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.3"
+libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.7"
