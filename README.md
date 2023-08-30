@@ -13,7 +13,7 @@ This library provides interoperability between **Monix 3.4** and **ZIO 1 and ZIO
 In order to use this library, we need to add the following line in our `build.sbt` file:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-interop-monix" % "3.4.2.1.1"
+libraryDependencies += "dev.zio" %% "zio-interop-monix" % "3.4.2.1.2"
 ```
 
 ## Tasks
